@@ -26,7 +26,7 @@ async function run() {
     await client.connect()
     const db = client.db("shopNest_db")
     const productCollection = db.collection("products")
-
+    const orderCollection = db.collection("orders");
 
     //get products from database
     app.get('/api/products', async (req: Request, res: Response) => {
@@ -94,6 +94,61 @@ async function run() {
     });
 
 
+    //For update product
+    app.patch("/api/products/:id", async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      if (!ObjectId.isValid(id)) {
+        res.status(400).json({
+          success: false,
+          message: "Invalid Product ID",
+        });
+        return;
+      }
+
+      const updatedProduct = req.body;
+
+      const result = await productCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            name: updatedProduct.name,
+            brand: updatedProduct.brand,
+            category: updatedProduct.category,
+            price: updatedProduct.price,
+            stock: updatedProduct.stock,
+            image: updatedProduct.image,
+            description: updatedProduct.description,
+            inStock: updatedProduct.inStock,
+          },
+        }
+      );
+
+      if (result.matchedCount === 0) {
+        res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Product updated successfully",
+      });
+    } catch (error) {
+      console.error("Update Product Error:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+      });
+    }
+  }
+);
+
+
     //For delete product
     app.delete("/api/products/:id", async (req: Request, res: Response): Promise<void> => {
     try {
@@ -135,6 +190,139 @@ async function run() {
 );
 
 
+    //get admin order
+    app.get("/api/orders", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const orders = await orderCollection.find({}).toArray();
+
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch orders",
+    });
+  }
+});
+
+
+
+    //get user my order
+    
+    app.get("/api/orders/:email", async (req: Request, res: Response) => {
+  const email = req.params.email;
+
+  const result = await orderCollection
+    .find({ userEmail: email })
+    .toArray();
+
+  res.json(result);
+});
+
+
+    //For order 
+    app.post("/api/orders", async (req: Request, res: Response) => {
+  const order = req.body;
+
+  const result = await orderCollection.insertOne(order);
+
+  res.json({
+    success: true,
+    insertedId: result.insertedId,
+  });
+});
+
+
+    //For update order status
+    app.patch("/api/orders/:id", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid Order ID",
+      });
+      return;
+    }
+
+    const { status } = req.body;
+
+    const result = await orderCollection.updateOne(
+      {
+        _id: new ObjectId(id),
+      },
+      {
+        $set: {
+          status,
+        },
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Order updated successfully",
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+});
+
+
+
+   //Delete order 
+    app.delete("/api/orders/:id", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid Order ID",
+      });
+      return;
+    }
+
+    const result = await orderCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    if (result.deletedCount === 0) {
+      res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Order deleted successfully",
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+});
+    
 
 
     
