@@ -2,7 +2,7 @@ import express, { type Express, type Request, type Response } from 'express';
 import cors from "cors";
 import dotenv from "dotenv";
 dotenv.config();
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { MongoClient, ServerApiVersion, ObjectId } from 'mongodb';
 
 const app: Express = express();
 app.use(cors());
@@ -34,6 +34,46 @@ async function run() {
       res.send(result)
     })
 
+
+    // For product details page
+    app.get("/api/products/:id", async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      if (!ObjectId.isValid(id)) {
+        res.status(400).json({
+          success: false,
+          message: "Invalid Product ID",
+        });
+        return;
+      }
+
+      const product = await productCollection.findOne({
+        _id: new ObjectId(id),
+      });
+
+      if (!product) {
+        res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+        return;
+      }
+
+      res.status(200).json(product);
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+      });
+    }
+  }
+);
+
+    
+
     app.post("/api/products", async (req: Request, res: Response) => {
       try {
         const product = req.body;
@@ -52,6 +92,47 @@ async function run() {
         });
       }
     });
+
+
+    //For delete product
+    app.delete("/api/products/:id", async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { id } = req.params;
+
+      if (!ObjectId.isValid(id)) {
+        res.status(400).json({
+          success: false,
+          message: "Invalid Product ID",
+        });
+        return;
+      }
+
+      const result = await productCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+
+      if (result.deletedCount === 0) {
+        res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Product deleted successfully",
+      });
+    } catch (error) {
+      console.error("Delete Product Error:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+      });
+    }
+  }
+);
 
 
 
