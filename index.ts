@@ -5,7 +5,7 @@ import { MongoClient, ServerApiVersion, ObjectId } from 'mongodb';
 const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 dotenv.config();
 
-// Express Request ইন্টারফেস এক্সটেন্ড করা যাতে req.user ব্যবহার করা যায়
+
 interface CustomRequest extends Request {
   user?: any;
 }
@@ -14,7 +14,7 @@ const app: Express = express();
 app.use(cors());
 app.use(express.json());
 
-// টাইপ ফিক্স: string | undefined চেক করা হয়েছে
+// type fix: check string | undefined
 const port = Number(process.env.NEXT_PUBLIC_BASE_URL || 5000);
 
 const uri = process.env.MONGODB_URI;
@@ -30,14 +30,14 @@ const client = new MongoClient(uri, {
   }
 });
 
-// টাইপ ফিক্স: URL এর জন্য fallback স্ট্রিং ব্যবহার করা হয়েছে
+// type fix: For URL fallback
 const authUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000";
 const JWKS = createRemoteJWKSet(
     new URL(`${authUrl}/api/auth/jwks`)
 );
 console.log("JWKS:", JWKS);
 
-// টাইপ ফিক্স: Request টাইপকে CustomRequest দিয়ে রিপ্লেস করা হয়েছে
+
 const verifyToken = async (
   req: CustomRequest,
   res: Response,
