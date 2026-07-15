@@ -1,8 +1,10 @@
-import express, { type Express, type Request, type Response } from 'express';
+import express, { type Express, type Request, type Response, type NextFunction } from 'express';
 import cors from "cors";
 import dotenv from "dotenv";
-dotenv.config();
 import { MongoClient, ServerApiVersion, ObjectId } from 'mongodb';
+import jwt from "jsonwebtoken";
+const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
+dotenv.config();
 
 const app: Express = express();
 app.use(cors());
@@ -19,6 +21,34 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+
+const JWKS = createRemoteJWKSet(
+    new URL(`${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/auth/jwks`)
+);
+console.log("JWKS:", JWKS)
+
+const verifyToken = async (req, res, next) => {
+    const authHeader = req?.headers.authorization;
+    console.log("authHeader:", authHeader)
+    if (!authHeader) {
+        return res.status(401).json({ message: "Unauthorised" });
+    }
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+        return res.status(401).json({ message: "Unauthorised" });
+    }
+    try {
+        const { payload } = await jwtVerify(token, JWKS);
+        req.user = payload;
+        
+        next();
+    } catch (error) {
+        return res.status(403).json({ message: "Forbidden" });
+    }
+   
+    
+};
 
 
 async function run() {
@@ -74,7 +104,7 @@ async function run() {
 
     
 
-    app.post("/api/products", async (req: Request, res: Response) => {
+    app.post("/api/products", verifyToken, async (req: Request, res: Response) => {
       try {
         const product = req.body;
         const result = await productCollection.insertOne(product);
@@ -150,7 +180,7 @@ async function run() {
 
 
     //For delete product
-    app.delete("/api/products/:id", async (req: Request, res: Response): Promise<void> => {
+    app.delete("/api/products/:id", verifyToken, async (req: Request, res: Response): Promise<void> => {
     try {
       const { id } = req.params;
 
