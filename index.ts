@@ -10,7 +10,7 @@ const app: Express = express();
 app.use(cors());
 app.use(express.json());
 
-const port = process.env.NEXT_PUBLIC_BASE_URL;
+const port = Number(process.env.NEXT_PUBLIC_BASE_URL);
 
 const uri = process.env.MONGODB_URI
 
@@ -28,7 +28,9 @@ const JWKS = createRemoteJWKSet(
 );
 console.log("JWKS:", JWKS)
 
-const verifyToken = async (req, res, next) => {
+const verifyToken = async (req: Request,
+  res: Response,
+  next: NextFunction): Promise<void> => {
     const authHeader = req?.headers.authorization;
     console.log("authHeader:", authHeader)
     if (!authHeader) {
