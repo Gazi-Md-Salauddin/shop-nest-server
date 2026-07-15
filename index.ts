@@ -5,16 +5,20 @@ import { MongoClient, ServerApiVersion, ObjectId } from 'mongodb';
 const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 dotenv.config();
 
-
-interface CustomRequest extends Request {
-  user?: any;
+// Extend Express Request interface
+declare global {
+  namespace Express {
+    interface Request {
+      user?: any;
+    }
+  }
 }
 
 const app: Express = express();
 app.use(cors());
 app.use(express.json());
 
-// type fix: check string | undefined
+// type fix
 const port = Number(process.env.NEXT_PUBLIC_BASE_URL || 5000);
 
 const uri = process.env.MONGODB_URI;
@@ -30,21 +34,17 @@ const client = new MongoClient(uri, {
   }
 });
 
-// type fix: For URL fallback
 const authUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000";
 const JWKS = createRemoteJWKSet(
     new URL(`${authUrl}/api/auth/jwks`)
 );
-console.log("JWKS:", JWKS);
-
 
 const verifyToken = async (
-  req: CustomRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
     const authHeader = req?.headers.authorization;
-    console.log("authHeader:", authHeader);
     if (!authHeader) {
          res.status(401).json({ message: "Unauthorised" });
          return;
@@ -57,7 +57,6 @@ const verifyToken = async (
     try {
         const { payload } = await jwtVerify(token, JWKS);
         req.user = payload; 
-        
         next();
     } catch (error) {
          res.status(403).json({ message: "Forbidden" });
@@ -81,7 +80,8 @@ async function run() {
     // For product details page
     app.get("/api/products/:id", async (req: Request, res: Response): Promise<void> => {
       try {
-        const { id } = req.params;
+        // একদম নিখুঁত টাইপ কাস্টিং (TS2345 এরর দূর করার জন্য)
+        const id = req.params.id as string; 
 
         if (!ObjectId.isValid(id)) {
           res.status(400).json({
@@ -113,8 +113,7 @@ async function run() {
       }
     });
 
-    // টাইপ ফিক্স: CustomRequest ব্যবহার করা হয়েছে
-    app.post("/api/products", verifyToken as any, async (req: CustomRequest, res: Response) => {
+    app.post("/api/products", verifyToken, async (req: Request, res: Response) => {
       try {
         const product = req.body;
         const result = await productCollection.insertOne(product);
@@ -135,7 +134,7 @@ async function run() {
     //For update product
     app.patch("/api/products/:id", async (req: Request, res: Response): Promise<void> => {
       try {
-        const { id } = req.params;
+        const id = req.params.id as string; // টাইপ কাস্টিং
 
         if (!ObjectId.isValid(id)) {
           res.status(400).json({
@@ -184,10 +183,10 @@ async function run() {
       }
     });
 
-    // টাইপ ফিক্স: CustomRequest ব্যবহার করা হয়েছে
-    app.delete("/api/products/:id", verifyToken as any, async (req: CustomRequest, res: Response): Promise<void> => {
+    //For delete product
+    app.delete("/api/products/:id", verifyToken, async (req: Request, res: Response): Promise<void> => {
       try {
-        const { id } = req.params;
+        const id = req.params.id as string; // টাইপ কাস্টিং
 
         if (!ObjectId.isValid(id)) {
           res.status(400).json({
@@ -258,7 +257,7 @@ async function run() {
     //For update order status
     app.patch("/api/orders/:id", async (req: Request, res: Response): Promise<void> => {
       try {
-        const { id } = req.params;
+        const id = req.params.id as string; // টাইপ কাস্টিং
 
         if (!ObjectId.isValid(id)) {
           res.status(400).json({
@@ -299,7 +298,7 @@ async function run() {
     //Delete order 
     app.delete("/api/orders/:id", async (req: Request, res: Response): Promise<void> => {
       try {
-        const { id } = req.params;
+        const id = req.params.id as string; // টাইপ কাস্টিং
 
         if (!ObjectId.isValid(id)) {
           res.status(400).json({
@@ -324,7 +323,7 @@ async function run() {
         res.status(200).json({
           success: true,
           message: "Order deleted successfully",
-        });
+          });
       } catch (error) {
         console.error(error);
         res.status(500).json({
