@@ -19,7 +19,7 @@ app.use(cors());
 app.use(express.json());
 
 // type fix
-const port = Number(process.env.NEXT_PUBLIC_BASE_URL || 5000);
+const port = Number(process.env.PORT || 5000);
 
 const uri = process.env.MONGODB_URI;
 if (!uri) {
