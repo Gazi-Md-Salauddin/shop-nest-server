@@ -78,7 +78,7 @@ async function run() {
     });
 
     // For product details page
-    app.get("/api/products/:id", verifyToken, async (req: Request, res: Response): Promise<void> => {
+    app.get("/api/products/:id", async (req: Request, res: Response): Promise<void> => {
       try {
         
         const id = req.params.id as string; 
@@ -134,7 +134,7 @@ async function run() {
     //For update product
     app.patch("/api/products/:id", async (req: Request, res: Response): Promise<void> => {
       try {
-        const id = req.params.id as string; // টাইপ কাস্টিং
+        const id = req.params.id as string;
 
         if (!ObjectId.isValid(id)) {
           res.status(400).json({
