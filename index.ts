@@ -78,9 +78,9 @@ async function run() {
     });
 
     // For product details page
-    app.get("/api/products/:id", async (req: Request, res: Response): Promise<void> => {
+    app.get("/api/products/:id", verifyToken, async (req: Request, res: Response): Promise<void> => {
       try {
-        // একদম নিখুঁত টাইপ কাস্টিং (TS2345 এরর দূর করার জন্য)
+        
         const id = req.params.id as string; 
 
         if (!ObjectId.isValid(id)) {
@@ -113,7 +113,7 @@ async function run() {
       }
     });
 
-    app.post("/api/products", verifyToken, async (req: Request, res: Response) => {
+    app.post("/api/products", async (req: Request, res: Response) => {
       try {
         const product = req.body;
         const result = await productCollection.insertOne(product);
@@ -184,9 +184,9 @@ async function run() {
     });
 
     //For delete product
-    app.delete("/api/products/:id", verifyToken, async (req: Request, res: Response): Promise<void> => {
+    app.delete("/api/products/:id", async (req: Request, res: Response): Promise<void> => {
       try {
-        const id = req.params.id as string; // টাইপ কাস্টিং
+        const id = req.params.id as string;
 
         if (!ObjectId.isValid(id)) {
           res.status(400).json({
@@ -298,7 +298,7 @@ async function run() {
     //Delete order 
     app.delete("/api/orders/:id", async (req: Request, res: Response): Promise<void> => {
       try {
-        const id = req.params.id as string; // টাইপ কাস্টিং
+        const id = req.params.id as string;
 
         if (!ObjectId.isValid(id)) {
           res.status(400).json({
